@@ -1,0 +1,592 @@
+---
+title: "Metabolomics Data Analysis"
+subtitle: "Introduction"
+author: "Miao Yu"
+date: "2018/07/04(updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.align='center',echo = F, cache=T,message=FALSE,warning=FALSE,comment=NA)
+```
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+## Don't Panic
+
+```{r echo=FALSE,out.width='42%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/oreilly.png')
+```
+
+---
+
+# Workshop Outline
+
+## Introduction
+
+## Statistical Analysis
+
+## Batch Effect and Correction
+
+## Annotation
+
+## Data Analysis Demo
+
+---
+class: inverse, center, middle
+
+# What
+
+---
+class: middle,center
+
+.left[
+## Defination
+]
+
+```{r echo=FALSE,out.width='70%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/metabolomics.png')
+```
+
+By <a href="//commons.wikimedia.org/w/index.php?title=User:Ycyc0927&amp;action=edit&amp;redlink=1" class="new" title="User:Ycyc0927 (page does not exist)">Ycyc0927</a> - <span class="int-own-work" lang="en">Own work</span>, <a href="https://creativecommons.org/licenses/by-sa/4.0" title="Creative Commons Attribution-Share Alike 4.0">CC BY-SA 4.0</a>, <a href="https://commons.wikimedia.org/w/index.php?curid=68544125">Link</a>
+
+???
+
+- Downstream of Central Dogma
+- Small molecular (molecular weight < 1500Da)
+- Endogenous substance
+- XC-MS or NMR based
+
+---
+## History
+
+```{r echo=FALSE,out.width='70%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/metahistory.jpg')
+```
+
+.half[
+```{r hisref,results = 'asis'}
+doi <- c('10.1007/978-981-10-1503-8_5')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+- 2000-1500 BC some traditional Chinese doctors who began to evaluate the glucose level in urine of diabetic patients using ants
+
+- 300 BC ancient Egypt and Greece that traditionally determine the urine taste to diagnose human diseases
+
+- 1913 Joseph John Thomson and Francis William Aston mass spectrometer 
+
+- 1946 Felix Bloch and Edward Purcell Nuclear magnetic resonance
+
+- late 1960s cinematographic separation technique
+
+- 1971 Pauling’s research team "Quantitative Analysis of Urine Vapor and Breath by Gas–Liquid Partition Cinematography"
+
+- Willmitzer and his research team pioneer group in metabolomics which suggested the promotion of the metabolomics field and its potential applications from agriculture to medicine and other related areas in the biological sciences
+
+- 2007 Human Metabolome Project consists of databases of approximately 2500 metabolites, 1200 drugs, and 3500 food components
+
+- post-metabolomics era high-throughput analytical techniques 
+
+---
+
+class: inverse, center, middle
+
+# Why
+
+---
+
+## Omics Famliy
+
+```{r rentrez}
+library(rentrez)
+library(reshape)
+library(ggplot2)
+papers_by_year <- function(years, search_term){
+    return(sapply(years, function(y) entrez_search(db="pubmed",term=search_term, mindate=y, maxdate=y, retmax=0)$count))
+}
+years <- 1987:2017
+total_papers <- papers_by_year(years, "")
+omics <- c("genomic", "transcriptomic", "proteomic", "metabolomics", "lipidomics", "exposome")
+trend_data <- sapply(omics, function(t) papers_by_year(years, t))
+trend_props <- trend_data/total_papers
+trend_df <- melt(data.frame(years, trend_data), id.vars="years")
+p <- ggplot(trend_df, aes(years, value, colour=variable))
+p + geom_line(size=1) + scale_y_log10("number of papers")
+```
+
+---
+## Applicaiton
+
+.large[
+- Systems biology
+- Precision medicine
+- Toxicology
+- Forensic science
+- Food science
+- Environmental science
+]
+
+---
+
+class: inverse, center, middle
+
+# How
+
+---
+
+## General Workflow
+
+.large[
+- Idea
+- Experimental Design
+- Sample collection
+- Pretreatment
+- Instrumental Analysis
+- Data Analysis
+]
+
+---
+
+## Idea
+
+- Metabolomics would cover unknown compounds
+- Study would cover nothing without purpose
+
+> Garbage in, garbage out
+
+### Common Goals
+
+- Methodology/validation
+- Diagnose/prediction
+- Bio-process/explanation
+
+> Validation is hard for unknown compounds
+
+---
+## Experimental Design
+
+### Homogeneity 
+
+- Technical replicates
+
+        - all samples are from same population
+        - research purpose is about method in most cases
+
+- Biological replicates
+
+        - all samples are from same population with same biological process
+        - research purpose is about biological process
+        - technical replicates could also be used with biological replicates
+
+---
+## Experimental Design
+
+### Heterogeneity
+
+- Outlier detection/Cross-section study
+
+        - Inner relationship among known/unknown compounds
+        - Baseline
+        
+- Distribution/Spatial analysis
+
+        - Geological relationship of known/unknown compounds
+        
+- Time Series/Cohort study
+
+        - Temporal trend of known/unknown compounds
+        - Baseline
+
+- Clinical Tril
+
+---
+## Experimental Design
+
+### Power Analysis
+
+- Power = 1 - False Negative
+
+        - Probability of finding an effect that is there
+        - Fixed effects, get sample size to show differences among groups
+        - Fixed power, get effects to show differences among groups
+        - Prelimitary experiment required
+
+- Simulation to estimate the sample size
+
+.half[
+```{r powerref,results = 'asis'}
+doi <- c('10.1021/acs.analchem.6b00188')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+The numbers of samples in each group should be carefully calculated. Supposing the metabolites of certain biological process only have a few metabolites, the first goal of the experimental design is to find the differences of each metabolite in different group. For each metabolite, such comparison could be treated as one t-test. You need to perform a Power analysis to get the numbers. For example, we have two groups of samples with 10 samples in each group. Then we set the power at 0.9, which means 1 minus Type II error probability, the standard deviation at 1 and the significance level(Type 1 error probability) at 0.05. Then we get the meaningful delta between the two groups should be higher than 1.53367 under this experiment design. Also we could set the delta to get the minimized numbers of the samples in each group. To get those data such as the standard deviation or delta for power analysis, you need to perform pre-experiments.
+
+---
+## Sample Collection
+
+### Quenching
+        
+        - Instantaneous inactivation of metabolism
+        - rapid low/high temprature
+        - Organic solvent
+
+### Storage
+
+        - -80°C or -20°C
+        - Dry ice
+
+
+.half[
+```{r sampleref,results = 'asis'}
+doi <- c('10.1186/1475-2859-6-27','10.1128/mSystems.00100-17')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+???
+Quenching is always discussed for microorganism or cell related metabolomics.
+Storage is always concerned by tissue related study.
+
+---
+## Pretreatment
+
+- From samples to injection vials
+
+- More **interesting** compounds, less **unrelated** interference (matrix effects)
+
+- Remove lipid
+
+  - Gel Permeation Chromatograph(GPC)
+  - Florisil
+  - Alumina
+  - Silica gel
+  
+- Protein denaturation
+  
+  - Alcohols
+  - Strong acid/base
+
+.half[
+```{r spmeref,results = 'asis'}
+doi <- c('10.1021/acs.analchem.7b04502')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+Pretreatment should fit the purpose of your research. For metabolomics, common unrelated interference are hard to define. Usually, we need to remove lipid and make protein denaturation to release more compounds.
+
+---
+
+## Pretreatment
+
+- Different pretreatment would show different coverage of compounds
+
+  - solvent/sorbent/coating
+  - extraction time
+  - temperature
+  
+- Free concentration v.s. binding constants
+
+- Living system: *in vivo* SPME
+
+???
+No method could cover all the interesting compounds. The form of the compounds would also matters
+
+---
+## Instrumental Analysis
+
+- Nuclear magnetic resonance(NMR)
+
+  - structural identification
+  - little or no sample preparation
+  - highly reproducible results
+
+- Gas/Liquid chromatography–mass spectrometry(XCMS)
+
+  - high sensitivity
+  - high selectivity
+  - multi-stage mass spectrometry
+
+---
+## Instrumental Analysis - GC-MS
+
+### Column and Temperature Selection
+
+- Higher temperature, higher boiling point
+- Polarity of samples and column should match
+- Funtional groups of stationary phase matters
+  
+> How to select column and temperature to seperate polar compounds?
+
+---
+## Instrumental Analysis - LC-MS
+
+### Column and Gradient Selection
+
+- More polar solvent could release polar compounds
+- More non-polar solvent could release non-polar compounds
+- Normal-phase: non-polar compounds first, polar compounds make separation
+- Reversed-phase: polar compounds first, non-polar compounds make separation
+
+> Gradient from polar to non-polar make a better seperation on ____ compounds on a reversed-phase column
+
+???
+pretreatment method should fit the instrumental analysis methods
+---
+
+## Instrumental Analysis - Quality Control
+
+- Random injection sequence
+- Calibration for high resolution mass spectrum in real time
+- The cap of sequence should old the column with Pooled QC:
+
+  - Blank, Blank, Blank 
+  - Solvent Blank, Solvent Blank, Solvent Blank
+  - Pooled QC, Pooled QC, Pooled QC
+  - Instrumental QC, blank
+  
+- Every ten random samples as a block
+- Blocks are separated by this sub-sequence 
+
+  - Block1
+  - Blank, Pooled QC, Instrumental QC
+  - Block2
+
+> Compute the volume of pooled QC before started!!!
+
+???
+Instrumental QC show the stability of instrument; blank show the baseline of column; Solvent Blank show the baseline of column and solvent; Pooled QC show the baseline of all compounds
+  
+---
+
+## Data Analysis
+
+.large[
+- From raw data to peaks in each samples
+- Align peaks to make retention time correction
+- Fill the peaks for aligned peaks list
+- Peaks list
+  - Peaks with mass to charge ratio @ retention time in row
+  - Samples in column
+- Statistical analysis on peaks list
+- Annotation for peaks
+]
+
+---
+
+## Demo of XC-MS Data
+
+```{r singledata, fig.show='hold', fig.cap='Demo of GC/LC-MS data',echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/metaworkflow/images/singledata.png')
+```
+
+---
+
+## Demo of Peaks
+
+```{r demoeic, fig.show='hold'}
+intensity <- c(10,10,10,10,10,14,19,25,30,33,26,21,16,12,11,10,9,10,11,10)
+time <- c(1:20)
+plot(intensity~time, type = 'o', main = 'EIC')
+```
+
+---
+
+## Demo of Peak Detection
+
+```{r matchedfilter, fig.show='hold', fig.cap='Demo of matchedfilter',echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/metaworkflow/images/matchedfilter.jpg')
+```
+
+.half[
+```{r refp0,results = 'asis'}
+doi <- c('10.1021/ac051437y')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+In mass spectrum dataset, the EIC is not that simple for full scan. Due to the accuracy of instrument, the detected mass to charge ratio would have some shift and EIC would fail if different scan get the intensity from different mass to charge ratio. In the matchedfilter algorithm, they solve this issue by bin the data in m/z dimension. The adjacent chromatographic slices could be combined to find a clean signal fitting fixed second-derivative Gaussian with full width at half-maximum
+(fwhm) of 30s to find peaks with about 1.5-4 times the signal peak width. The the integration is performed on the fitted area.
+
+---
+
+## Demo of Peak Detection
+
+```{r roi, fig.show='hold', fig.cap='Demo of Region Of Interest (ROI)',echo=FALSE,out.width= '62%'}
+knitr::include_graphics('https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2639432/bin/1471-2105-9-504-2.jpg')
+```
+
+.half[
+```{r refp,results = 'asis'}
+doi <- c('10.1186/1471-2105-9-504')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+ROI means a regine with stable mass for a certain time. When we find the ROIs, the peak shape is evaluated and ROI could be extended if needed. 
+
+---
+
+## Demo of Peak Detection
+
+```{r centwave, fig.show='hold', fig.cap='Demo of CentWave',echo=FALSE,out.width= '62%'}
+knitr::include_graphics('https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2639432/bin/1471-2105-9-504-6.jpg')
+```
+
+.half[
+```{r refp1,results = 'asis'}
+doi <- c('10.1186/1471-2105-9-504')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+the following Continuous Wavelet Transform (CWT) is preferred to detect peaks
+
+---
+
+## Demo of Retention Time Correction
+
+```{r obiwarp, fig.show='hold', fig.cap='Demo of Obiwarp',echo=FALSE,out.width= '50%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/obiwarp.gif')
+```
+
+.half[
+```{r refrt,results = 'asis'}
+doi <- c('10.1021/ac0605344')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+???
+Loess alignment use local region to align the peaks. However, obiwarp alignment with bijective interpolated dynamic time warping. Raw data from two LC−MS runs, whether successive fractions or across different biological conditions, (1) is interpolated into a (2) uniform matrix (or rectilinear matrix). (3) An all vs all similarity matrix of the spectra is constructed. (4) The similarity matrix distribution is mean centered and normalized by the standard deviation. (5) Dynamic programming is performed by adding similarity scores along a recursively generated optimal path while off-diagonal transitions are penalized by either a local or global gap penalty to give (6) an additive score matrix. (7) Pointers are kept in a traceback matrix used to deliver (8) the optimal alignment path. (9) High scoring points in the optimal path are selected to create a bijective (one-to-one) mapping, which is used as anchors for PCHIP interpolation to generate a smooth warp function. (II) Verification and optimization. (11) MS/MS spectra from the raw MS runs are searched via SEQUEST and Peptide/Protein Prophet to determine peak identities. (12) High-confidence identifications are selected and (13) the overlapping set of peptide identifications (after filtering outliers) is used as the alignment standard. (14) The warp function produced through the comparison of MS data is applied to the standards. (15) The ideal alignment would shift all standards to the diagonal. The accuracy of an alignment is calculated as the sum of the square residuals from the diagonal.
+
+---
+
+## Demo of Peaks Filling
+
+```{r peakfilling, fig.show='hold', echo=FALSE,out.width= '90%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/peakfiling.png')
+```
+
+---
+
+## Demo of Many XC-MS Data
+
+```{r multidata, fig.show='hold', fig.cap='Demo of many GC/LC-MS data',echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/metaworkflow/images/multidata.png')
+```
+
+---
+
+## Statistic Analysis v.s. Description
+
+### Single mass spectrum comparision
+
+.pull-left[
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/2585ms.png')
+```
+]
+
+.pull-right[
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/258535ms.png')
+```
+]
+
+---
+
+## Statistic Analysis v.s. Description
+
+### Mass spectrums differences
+
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/diffplot.png')
+```
+
+- NOT statistical comparison
+
+- Useful for exploratory analysis
+
+- Single sample is not enough
+
+---
+
+## Summary
+
+- ### Each sample need peak-picking algorithm to get peaks
+
+- ### Peaks should be aligned and grouped by retention time
+
+- ### Samples without certain peaks should be filled with noise
+
+- ### Peaks list is the beginning of Statistical analysis
+
+---
+class: inverse, center, middle
+
+# Issues
+
+---
+
+# Issues
+
+- ### Statistical analysis
+
+- ### Batch effects correction
+
+- ### Annotation of peaks
+
+- #### High-throughput
+
+- #### Pretreatment optimization
+
+- #### Omics analysis
+
+- #### Reproducible research
+
+---
+
+## Summary
+
+- ### Metabolomics cover topics in biology, analytical chemistry and chemometrics
+
+- ### You need to know related concepts before experiments
+
+- ### Design your workflow according to your research
+
+- ### Report the details of everything
+
+---
+
+class: inverse, center, middle
+
+# Q&A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/

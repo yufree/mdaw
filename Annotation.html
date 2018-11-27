@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Metabolomics Data Analysis</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Miao Yu" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="my-theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Metabolomics Data Analysis
+## Annotation
+### Miao Yu
+### 2018/07/12(updated: 2018-11-27)
+
+---
+
+
+
+
+&lt;script&gt;
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+&lt;/script&gt;
+
+
+## Don't Panic
+
+&lt;div class="figure" style="text-align: center"&gt;
+&lt;img src="https://yufree.github.io/presentation/figure/cat.jpg" alt="Annotation is similar to find real cat in this picture" width="42%" /&gt;
+&lt;p class="caption"&gt;Annotation is similar to find real cat in this picture&lt;/p&gt;
+&lt;/div&gt;
+
+???
+Annotation is similar to find real cat in this picture
+
+---
+
+class: inverse, center, middle
+
+# Mass Spectrum
+
+---
+
+## Electron ionization (EI)
+
+&lt;a title="By Evan Mason [CC BY-SA 4.0 
+ (https://creativecommons.org/licenses/by-sa/4.0
+)], from Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Electron_Ionization.svg"&gt;&lt;center&gt;&lt;img width="512" alt="Electron Ionization" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Electron_Ionization.svg/512px-Electron_Ionization.svg.png"&gt;&lt;/center&gt;&lt;/a&gt;
+
+---
+
+## Electrospray ionization (ESI)
+
+&lt;a title="By Evan MAson [CC BY-SA 4.0 
+ (https://creativecommons.org/licenses/by-sa/4.0
+)], from Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Electrospray_Ionization_Spectroscopy.svg"&gt;&lt;center&gt;&lt;img width="512" alt="Electrospray Ionization Spectroscopy" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Electrospray_Ionization_Spectroscopy.svg/512px-Electrospray_Ionization_Spectroscopy.svg.png"&gt;&lt;/center&gt;&lt;/a&gt;
+
+???
+(1) Under high voltage, the Taylor Cone emits a jet of liquid drops (2) The solvent from the droplets progressively evaporates, leaving them more and more charged (3) When the charge exceeds the Rayleigh limit the droplet explosively dissociates, leaving a stream of charged ions
+
+---
+
+## Ionization
+
+- Ionization potentials of biomolecular is about 8-10 eV
+
+- EI use electrons with 70 eV
+
+- ESI use charged droplet and Coulomb fission to get ions
+
+- In-source reaction is complex and generate fragmental ions
+
+- Impurity or matrix effects also influnce ionization
+
+---
+
+## Gap between peaks and compounds
+
+&lt;img src="https://yufree.github.io/presentation/figure/peakcom.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+---
+class: inverse, center, middle
+
+# Identification
+
+---
+
+## Standards
+
+- Internal standards are used to maintain the stablity of instrument
+
+- Surrogate standards are used to measure recovery
+
+  - Should have similar response factor with analytes
+  
+  - Should not exsit in samples (isotope labled)
+  
+- A set of compounds with wide range of Log P could be used to make method developement
+
+- For metabolomics, standards are always used to validate the annotation/identification results
+
+---
+
+## Tandem mass spectrometry
+
+&lt;a title="By K. Murray (Kkmurray) [GFDL (http://www.gnu.org/copyleft/fdl.html), CC-BY-SA-3.0 (http://creativecommons.org/licenses/by-sa/3.0/) or CC BY-SA 2.5 
+ (https://creativecommons.org/licenses/by-sa/2.5
+)], from Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:MS_MS.png"&gt;&lt;center&gt;&lt;img width="512" alt="MS MS" src="https://upload.wikimedia.org/wikipedia/commons/e/eb/MS_MS.png"&gt;&lt;/center&gt;&lt;/a&gt;
+
+- Use fragmental ions to reduce signal-to-noise ratio 
+
+- Reaction is specific for certain compounds
+
+- Fragmental ions could be used for prediction and structure identification
+
+---
+
+## Compounds Database
+
+- [HMDB](http://www.hmdb.ca/)
+
+- [Lipid Maps](http://www.lipidmaps.org/)
+
+- [KEGG](http://www.genome.jp/kegg/)
+
+- [PubChem](https://pubchem.ncbi.nlm.nih.gov/)
+
+- [Chemspider](http://www.chemspider.com/)
+
+- [T3DB](http://www.t3db.ca/)
+
+---
+
+## Mass Spectral Database
+
+- [MassBank](http://www.massbank.jp/?lang=en)
+
+- [GNPS](https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp)
+
+- [ReSpect](http://spectra.psc.riken.jp/): phytochemicals
+
+- [Metlin](https://metlin.scripps.edu/)
+
+- [LipidBlast](http://fiehnlab.ucdavis.edu/projects/LipidBlast): *in silico* prediction
+
+- [MZcloud](https://www.mzcloud.org/)
+
+---
+
+## HMDB
+
+- 114066 metabolites (2018-04-10)
+
+- 13429 monisotopic molecular weight
+
+- 11762 chemical formula
+
+- 113900 smiles
+
+- For each monisotopic molecular weight, you could find ~8.5 metabolites
+
+        - For lipid, the ratio is ~0.06
+
+        - For other compounds, the ratio is ~0.8
+        
+- [More](https://yufree.cn/en/2018/04/22/play-with-hmdb-datasets-part-ii/)
+
+???
+Don't use MS for lipid identification
+
+---
+
+## From Compounds to Mass Spectrum
+
+- If we only have compounds structure, we could guess ions under different ionization method
+
+- If we have mass spectrum, we could match the mass spectral by a similarity analysis
+
+- In metabolomics, we only have mass spectrum or mass-to-charge ratios
+
+- Single mass-to-charge ratio is not enough for identification
+
+- Prediction is always performed on MS/MS data
+
+---
+
+## Summary
+
+- Each compound would show multiple ions
+
+- Different compounds could share similar mass-to-charge ratio, even on high-resolution MS
+
+- Seperation is not always perfect
+
+- Identification for all peaks is almost impossible
+
+- Database only cover known compounds
+
+- For lipid, MS is not enough
+
+---
+class: inverse, center, middle
+
+# Annotation
+
+---
+
+## Pseudospectra extraction
+
+### Find the peaks from same compounds
+
+- Similar retention time
+
+- Peak shape similarity
+
+- Peak abundance correlation
+
+---
+
+## Peak classification
+
+### Adducts, Neutral losses, isotopes, and other mass relationships based on mass distances
+
+- Adducts
+
+     - Positive mode: `\([M+H]^+\)` `\([M+Na]^+\)` `\([M+K]^+\)`
+     - Negative mode: `\([M-H]^-\)` `\([M+Na-2H]^-\)` `\([M+Cl]^-\)`
+
+- Neutral losses
+
+     - `\(H_2O\)` `\(NH_3\)`
+     
+- Isotopes
+
+     - Positive mode: `\([M+H]^+(+1)\)` `\([M+H]^+(+2)\)`
+     - Negative mode: `\([M-H]^-(+1)\)` `\([M-H]^-(+2)\)`
+
+- Mass distances could be used to find relationship among m/z
+
+---
+
+## Mass defect
+
+- Nucleus = protons + neutrons
+
+- The actual mass is less than the mass of the separate particles
+
+- The "missing" mass is in the form of binding energy
+
+`$$E=\Delta MC^2$$`
+
+- Such mass defect is identity for certain element
+
+- Same for compounds. Same formula would have specific mass defect value
+
+- Metabolites always show a mass defect value within 50 mDa compaired with parent compounds
+        
+        - Metabolites usually has similar structure with parent compounds
+        - The differences would cause limited influnces on mass defect
+
+---
+
+## Kendrick mass defect plots
+
+&lt;img src="https://yufree.github.io/presentation/figure/kmd.gif" width="42%" style="display: block; margin: auto;" /&gt;
+
+- Compounds of the same class but different number of `\(CH_2\)` units will fall on a single horizontal line
+
+.half[
+Hughey, C. A., Hendrickson, C. L., Rodgers, R. P., Marshall, A. G., &amp; Qian, K. (2001). Kendrick Mass Defect Spectrum:  A Compact Visual Analysis for Ultrahigh-Resolution Broadband Mass Spectra. Analytical Chemistry, 73(19), 4676–4681. doi:10.1021/ac010560w
+]
+
+---
+
+## Unit based Mass defect
+
+- Mass Defect:
+
+`$$Mass\ defect = round(measured\ mass) - measured\ mass$$`
+
+- Unit based mass defect
+
+$$ Unit\ based\ mass = measured\ mass * round(unit\ exact\ mass)/unit\ exact\ mass $$
+
+- If compounds share repeated units, they share same unit based mass defect
+
+---
+
+## Relative Mass Defect
+
+- Mass Defect:
+
+`$$Mass\ defect = round(measured\ mass) - measured\ mass$$`
+
+- Relative Mass Defect (RMD)
+
+`$$Relative\ Mass\ defect = (round(measured\ mass) - measured\ mass )/measured\ mass * 10^6$$`
+
+- Alkanes have RMD &gt; 1000 ppm
+
+- Membrane lipids and steroids fall within 600 and 1000 ppm
+
+- Sugar between 300 and 400 ppm
+
+- Organic acids with less than 300 ppm.
+
+.half[
+Stagliano, M. C., DeKeyser, J. G., Omiecinski, C. J., &amp; Jones, A. D. (2010). Bioassay-directed fractionation for discovery of bioactive neutral lipids guided by relative mass defect filtering and multiplexed collision-induced dissociation. Rapid Communications in Mass Spectrometry, 24(24), 3578–3584. doi:10.1002/rcm.4796
+]
+
+---
+
+## Biochemical Knowledge
+
+- Pathway based
+
+  - More compounds in certain pathway with changes, associated compounds's name would be true
+
+- Potential biological reaction
+
+  - Mass distance search
+  
+- Biochemical knowledge could help us rule out tentative names for certain peaks
+
+---
+
+## QSPR
+
+- Quantitative structure–activity relationship
+
+- Retention Index to predict compounds by seperation on GC/LC
+
+- Predict metabolites's RI by similar compounds
+
+`$$RI = f(computional\ molecular\ descriptors)$$`
+
+- Mearsurable molecular descriptors for prediction
+
+`$$Structure = f(m/z, RI, mass\ defect, Ion\ Mobility, knowledge)$$`
+
+
+
+---
+
+## Confidence Level
+
+- Level 1 'identified metabolites'
+
+        - MS/MS, retention time, accurate mass, 2D NMR spectra, and standards
+
+- Level 2 'Putatively annotated compounds'
+
+        - Data analysis based annotation
+
+- Level 3 'Putatively characterised compound classes'
+
+        - Experiences, retention time and pretreatment
+
+- Level 4 'Unknown'
+
+.half[
+Viant, M. R., Kurland, I. J., Jones, M. R., &amp; Dunn, W. B. (2017). How close are we to complete annotation of metabolomes? Current Opinion in Chemical Biology, 36, 64–69. doi:10.1016/j.cbpa.2017.01.001
+]
+
+---
+class: inverse, center, middle
+
+# Automation
+
+---
+
+## CAMERA
+
+- [Website](https://bioconductor.org/packages/release/bioc/html/CAMERA.html)
+
+### Pros
+
+- Availiable in xcms online
+
+- Pseudospectra extraction based on peaks shape
+
+- Peak classification based on tables
+
+- Table with clusters
+
+### Cons
+
+- BAD name
+
+- No furthor annotation
+
+.half[
+Kuhl, C., Tautenhahn, R., Böttcher, C., Larson, T. R., &amp; Neumann, S. (2011). CAMERA: An Integrated Strategy for Compound Spectra Extraction and Annotation of Liquid Chromatography/Mass Spectrometry Data Sets. Analytical Chemistry, 84(1), 283–289. doi:10.1021/ac202450g
+]
+
+---
+
+## Metlin
+
+- [Website](https://metlin.scripps.edu/)
+
+### Pros
+
+- Online application
+
+- Batch search
+
+- Structure prediction
+
+- Support MS and MS/MS data
+
+### Cons
+
+- User defined search
+
+- Data is not open
+
+.half[
+Guijas, C., Montenegro-Burke, J. R., Domingo-Almenara, X., Palermo, A., Warth, B., Hermann, G., … Siuzdak, G. (2018). METLIN: A Technology Platform for Identifying Knowns and Unknowns. Analytical Chemistry, 90(5), 3156–3164. doi:10.1021/acs.analchem.7b04424
+]
+
+---
+
+## GNPS
+
+- [Website](https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp)
+
+### Pros
+
+- Online application
+
+- Network analysis for MS/MS data
+
+- Structure prediction
+
+- User Generated Content
+
+- Open data
+
+### Cons
+
+- No MS data
+
+.half[
+Wang, M., Carver, J. J., Phelan, V. V., Sanchez, L. M., Garg, N., Peng, Y., … Luzzatto-Knaan, T. (2016). Sharing and community curation of mass spectrometry data with Global Natural Products Social Molecular Networking. Nature Biotechnology, 34(8), 828–837. doi:10.1038/nbt.3597
+]
+
+---
+
+## xMSannotator
+
+- [Website](https://sourceforge.net/projects/xmsannotator/)
+
+### Pros
+
+- Use adducts, isotope, mass defect, bio-pathway
+
+- Show confidence level
+
+- Coupled with xcms/apLCMS
+
+- Database: HMDB/KEGG/T3DB/LipidMaps
+
+### Cons
+
+- Not easy to use
+
+- Database is out-of-date
+
+.half[
+Uppal, K., Walker, D. I., &amp; Jones, D. P. (2017). xMSannotator: An R Package for Network-Based Annotation of High-Resolution Metabolomics Data. Analytical Chemistry, 89(2), 1063–1067. doi:10.1021/acs.analchem.6b01214
+]
+---
+
+## RAMClustR
+
+- [Website](https://github.com/cbroeckl/RAMClustR)
+
+### Pros
+
+- Feature clustering algorithm
+
+- Generate NIST MSP specta
+
+- Better group than CAMERA
+
+### Cons
+
+- Not easy to use
+
+- No links to database (You could still search)
+
+.half[
+Broeckling, C. D., Afsar, F. A., Neumann, S., Ben-Hur, A., &amp; Prenni, J. E. (2014). RAMClust: A Novel Feature Clustering Method Enables Spectral-Matching-Based Annotation for Metabolomics Data. Analytical Chemistry, 86(14), 6812–6817. doi:10.1021/ac501530d
+]
+
+---
+
+## Ideal Tools
+
+- ### Work under MS and MS/MS
+
+- ### Output NIST MSP specta
+
+- ### Links to most updated database
+
+- ### Show compounds with confidence level
+
+- ### Extention for prediction
+
+&gt; If no one do it till the end of 2018, I will accept this challenge
+
+---
+
+## Useful links
+
+- [MetFamily](https://msbi.ipb-halle.de/MetFamily/) The MetFamily web application is designed for the identification of regulated metabolite families
+
+- [LipidMatch](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1744-3)  an automated workflow for rule-based lipid identification using untargeted high-resolution tandem mass spectrometry data
+
+- [MS-FINDER](http://prime.psc.riken.jp/Metabolomics_Software/MS-FINDER/) universal program for compound annotation with open data
+
+- [SIRIUS](https://bio.informatik.uni-jena.de/software/sirius/) CSI:FingerID integration to predict compound's structure
+
+- [iMAT](http://imet.seeslab.net/) the metabolite identification/prediction tool using tandem MS/MS spectrometr using network-based computation
+
+---
+
+class: inverse, center, middle
+
+# Q&amp;A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

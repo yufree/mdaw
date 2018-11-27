@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Metabolomics Data Analysis</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Miao Yu" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="my-theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Metabolomics Data Analysis
+## Batch correction
+### Miao Yu
+### 2018/07/11(updated: 2018-11-27)
+
+---
+
+
+
+
+&lt;script&gt;
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+&lt;/script&gt;
+
+## Don't Panic
+&lt;div class="figure" style="text-align: center"&gt;
+&lt;img src="https://yufree.github.io/presentation/figure/mad-panda.gif" alt="When you need to re-run your samples..." width="72%" /&gt;
+&lt;p class="caption"&gt;When you need to re-run your samples...&lt;/p&gt;
+&lt;/div&gt;
+
+---
+
+class: inverse, center, middle
+
+# Batch Effects
+
+---
+
+## Single Compound
+
+&lt;img src="BatchCorrection_files/figure-html/bes-1.png" width="61.8%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Three types of batch effects - Monotone
+
+&lt;img src="BatchCorrection_files/figure-html/unnamed-chunk-2-1.png" width="61.8%" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+## Three types of batch effects - Block
+
+&lt;img src="BatchCorrection_files/figure-html/unnamed-chunk-3-1.png" width="61.8%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Three types of batch effects - Mixed
+
+&lt;img src="BatchCorrection_files/figure-html/unnamed-chunk-4-1.png" width="61.8%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Multiple Compounds
+
+&lt;img src="BatchCorrection_files/figure-html/bem-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Summary
+
+- Batch effect for single compound is complex
+
+  - monotone (decreasing/increasing)
+  
+  - block
+  
+  - mixed
+
+- Different compounds would have different types of batch effects
+
+- Batch effect should have patterns, otherwise just noise
+
+  - For noise, adjust your pretreatment
+  
+  - For batch effect, correct is possible by data analysis/randomized experimental design
+
+---
+
+## How to find batch effects
+
+### Pooled QC
+
+- Clusters on PCA score plot
+
+- Check the selected ions if they changes in the same way as Pooled QC
+
+### Blank
+
+- Show stability about instrument
+
+- Check if abnormal peaks appeared
+
+### Visulization
+
+- Heatmap
+
+- TIC overlap
+
+---
+
+## How to find batch effects
+
+### Check the domination factor
+
+### Known batch
+
+- Linear regression with sequences/blocks
+
+- Check the slope and p-values of `\(\beta\)`
+
+        - Slope's positive/negative ratio
+        - p-values distribution
+
+### Unknown batch
+
+- Residual analysis of linear regression
+        
+        - PCA score plot
+        - Plot the residual
+
+---
+
+class: inverse, center, middle
+
+# Why
+
+---
+
+## Different Operators &amp; Dates &amp; Sequences
+
+&lt;img src="https://media.giphy.com/media/l4Jz3a8jO92crUlWM/giphy.gif" width="50%" style="display: block; margin: auto;" /&gt;
+
+
+&gt; You will never know each magic detail of each operator, even you did the experiment
+
+.half[
+Leek, J. T., Scharpf, R. B., Bravo, H. C., Simcha, D., Langmead, B., Johnson, W. E., … Irizarry, R. A. (2010). Tackling the widespread and critical impact of batch effects in high-throughput data. Nature Reviews Genetics, 11(10), 733–739. doi:10.1038/nrg2825
+]
+
+---
+
+## Different Instrumental Condition
+
+- Different instrumental parameters
+
+- Poor quality control
+
+- Sample contamination during the analysis
+
+  - Column (Pooled QC)
+  
+  - Matrix effects (ions suppression or/and enhancement)
+
+---
+
+## Unknown Unknowns
+
+&gt; ... But there are also unknown unknowns – the ones we don't know we don't know. And if one looks throughout the history of our country and other free countries, it is the latter category that tend to be the difficult ones. -- Rumsfeld
+
+- Some batch effects could be tracked and recorded in advance
+
+- Some batch effects could not be found until the data are done
+
+---
+class: inverse, center, middle
+
+# Batch Correction
+
+---
+
+# Experimental Design
+
+- Cap the sequence with Pooled QC
+
+- Randomized samples sequence
+
+  - You might loss discorvery
+  - Robust
+
+- Internal standards/Instrumental QC
+
+  - Targeted analysis
+  - Not practical for non-targeted analysis
+  - Help to find the source of batch effects
+
+---
+
+## Randomized samples sequence
+
+### Real values
+
+
+- Group 1 : 3.7115, 4.6523, 4.4784, 6.2735, 6.8245
+
+- Group 2 : 6.4887, 8.1105, 7.2392, 7.3301, 8.2745
+
+- Batch: 0, 0.5556, 1.1111, 1.6667, 2.2222, 2.7778, 3.3333, 3.8889, 4.4444, 5
+
+- T-test: t value -3.4451, p value 0.0129
+
+---
+
+### Real values with increasing batch effects
+
+
+
+- Group 1 : 3.9767, 3.7362, 5.4433, 6.6074, 8.1024
+
+- Group 2 : 11.0463, 11.3138, 11.3639, 11.0351, 11.166
+
+- T-test: t value -6.8312, p value 0.0023
+
+### Randomized sequnces with increasing batch effects
+
+
+
+- Group 1 : 5.8802, 6.6074, 5.4028, 7.8656, 9.3322
+
+- Group 2 : 8.8241, 9.0915, 10.2528, 9.4993, 11.0351
+
+- T-test: t value -3.3261, p value 0.0147
+
+&gt; Batch effects might not change the conclusion when the effect size is relatively small
+
+---
+
+### Real values with decreasing batch effects
+
+
+
+- Group 1 : 8.9036, 8.9102, 7.4677, 7.0906, 8.0097
+
+- Group 2 : 8.497, 10.2815, 9.838, 8.5134, 8.216
+
+- T-test: t value -1.7902, p value 0.1117
+
+### Randomized sequnces with decreasing batch effects
+
+
+
+- Group 1 : 8.348, 9.1208, 6.688, 5.4239, 4.6899
+
+- Group 2 : 13.216, 12.0602, 11.3926, 8.5134, 6.2748
+
+- T-test: t value -2.2587, p value 0.0587
+
+&gt; Randomization could not guarantee the results
+
+---
+
+## Randomized samples sequence
+
+- ### Always use randomized samples sequence to avoid batch effects
+
+- ### Not always work
+
+- ### Correction would be in right direction
+
+- ### The effect size and batch effect size matters
+
+---
+
+## Regular correction methods
+
+- ### Normalized by group mean/median/sum/quantile
+
+- ### Normalized by certain ions/samples
+
+- ### Scaling within single sample
+
+- ### Transformation
+
+- Similar to randomized samples sequence
+
+- No guarantee for result
+
+- Transformation is required for some model based correction
+
+- [NOREVA](http://idrb.zju.edu.cn/noreva/)
+
+---
+
+## Model Based Correction
+
+### Basic model
+
+`$$Intensity =  Average + Condition + Batch + Error$$`
+
+- Intensities are combination of real signal, patterned batch effect and pure noise
+
+- Regression model
+
+- Correction means the removal of batch part
+
+- Linear Models for MicroArray Data(LIMMA) model
+
+- Combat
+
+        - Empirical Bayesian framework based batch correction
+
+---
+
+## How to get batch effects
+
+- Known factors
+
+- Unknown factors
+
+&gt; For unknown factors, they have stable patterns. Batch effects could be treated as hidden factor
+
+### Desired hidden factor
+
+- Less assotiation with orginal group information
+
+- Strong assotiation with unknown group
+
+---
+
+## Methods to construct hidden factor
+
+- Principal component analysis
+
+  - Use the principal components for linear model
+  - Interactive re-weighted process on residual matrix
+
+- Factor analysis
+
+  - Factor Analysis for Multiple Testing (FAMT)
+
+- Bayesian mixture model
+
+  - RRmix
+
+### Try to find
+
+- Batch variable: 1,1,3,3,3,3,3,6,6,6
+
+---
+
+## Summary
+
+- ### Single peak is not suitable to correct all peaks
+
+- ### Model based correction is supervised method
+
+- ### Those models could be overfitted
+
+---
+class: inverse, center, middle
+
+# Evaluation
+
+---
+
+## Commen Methods
+
+-  Show intragroup variations
+
+  - Smaller variations mean good correction
+
+  - Supervised methods
+
+- Show influences on differential analysis
+
+  - More or less features would be found
+
+  - annotation or prior knowledge about those features
+
+- Independent correction methods
+
+  - Strong evidence always strong, while we might already know before
+
+- Influences on spiked-in compounds 
+
+  - Correction should not go outside of spiked-in compounds or compounds with similar structures
+
+.half[
+Li, B., Tang, J., Yang, Q., Li, S., Cui, X., Li, Y., … Zhu, F. (2017). NOREVA: normalization and evaluation of MS-based metabolomics data. Nucleic Acids Research, 45(W1), W162–W170. doi:10.1093/nar/gkx449
+]
+
+---
+
+## Simulation
+
+- From unknown unknowns to preso known knowns
+
+- How to simulate unknown compounds?
+
+  - Based on real data
+  - At peaks levels
+  - From one samples to multiple samples
+  - Simulate the batch effects 
+  
+- Evaluation
+
+  - Check the influences base on sensitivity and accuracy
+
+---
+
+## Statistical properties of group average intensities
+
+&lt;img src="https://yufree.github.io/presentation/figure/insdis.jpg" style="display: block; margin: auto;" /&gt;
+
+- MTBLS28
+- UPLC-Q-TOF Positive/Homo sapiens
+- Gender/Race/Smoking/Sample Type
+- 1005 samples/24 groups/1807 peaks
+
+---
+
+## Statistical properties of RSD% within groups
+
+&lt;img src="https://yufree.github.io/presentation/figure/rsddis.jpg" width="61.8%" style="display: block; margin: auto;" /&gt;
+
+- MTBLS28
+- UPLC-Q-TOF Positive/Homo sapiens
+- Gender/Race/Smoking/Sample Type
+- 1005 samples/24 groups/1807 peaks
+
+---
+
+## Gap between peaks and compounds
+
+&lt;img src="https://yufree.github.io/presentation/figure/peakcom.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Simulation recipes
+
+- Generate compounds peaks intensities based on intensity Weibull distribution
+- Add the correlated peaks to simulate real compounds
+- Generate replicated samples according to RSD% Weibull distribution
+- Define the proportion of peaks influenced by groups and batches
+- Add the predefined changes (exponential distribution) among groups and batches
+- Evaluation - ROC curve
+
+---
+
+## Simulation
+
+- 1000 peaks
+- 800 compounds
+- 2 groups with 10 samples in each group
+- 50 peaks influenced by groups
+- 3 batches with 8, 5, 7 samples in each batches
+- 100 peaks influenced by batches
+- Weibull distribution shape 2, scale 3 for peaks intensities
+- Weibull distribution shape 1, scale 0.18 for RSD% among groups
+
+---
+
+## Method Evaluation
+
+&lt;img src="https://yufree.github.io/presentation/figure/bemc.png" style="display: block; margin: auto;" /&gt;
+
+.half[
+Li, B., Tang, J., Yang, Q., Li, S., Cui, X., Li, Y., … Zhu, F. (2017). NOREVA: normalization and evaluation of MS-based metabolomics data. Nucleic Acids Research, 45(W1), W162–W170. doi:10.1093/nar/gkx449
+]
+
+---
+
+## Summary
+
+- Statistical distribution matters
+
+- Any batch correction method might works, including no correction
+
+- One compound with multiple peaks would reduce the true positive rate
+
+- Batch correction should consider false positive control
+
+- Try simulation first!!!
+
+- [mzrtsim](https://github.com/yufree/mzrtsim) package
+
+---
+
+class: inverse, center, middle
+
+# Q&amp;A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

@@ -1,0 +1,600 @@
+---
+title: "Metabolomics Data Analysis"
+subtitle: "Batch correction"
+author: "Miao Yu"
+date: "2018/07/11(updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.align='center',echo = F, cache=T,message=FALSE,warning=FALSE,comment=NA)
+```
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+## Don't Panic
+```{r echo=FALSE,out.width='72%', fig.cap='When you need to re-run your samples...'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/mad-panda.gif')
+```
+
+---
+
+class: inverse, center, middle
+
+# Batch Effects
+
+---
+
+## Single Compound
+
+```{r bes,echo=FALSE,out.width='61.8%'}
+library(ggplot2)
+library(xkcd)
+# batch effect
+con <- c(rnorm(5,1),rep(5,3))
+batch <- c(2,2,7,7,7,7,7,3,3,3) + seq(0,9,length.out = 10)
+ins <- con + batch
+group <- factor(c(rep(1,5),rep(2,5)))
+ind <- factor(c(1:10))
+data <- cbind.data.frame(group,ins,ind)
+ggplot(data,aes(ind,ins,fill = group)) + geom_col() + theme_xkcd()
+```
+
+---
+
+## Three types of batch effects - Monotone
+
+```{r echo=FALSE,out.width='61.8%'}
+# increasing batch
+batch <- seq(0,9,length.out = 10)
+group <- factor(c(rep(1,5),rep(2,5)))
+ind <- factor(c(1:10))
+data <- cbind.data.frame(group,batch,ind)
+ggplot(data,aes(ind,batch,fill = group)) + geom_col() + theme_xkcd()
+```
+
+
+---
+
+## Three types of batch effects - Block
+
+```{r echo=FALSE,out.width='61.8%'}
+# Block batch
+batch <- c(2,2,7,7,7,7,7,3,3,3)
+group <- factor(c(rep(1,5),rep(2,5)))
+ind <- factor(c(1:10))
+data <- cbind.data.frame(group,batch,ind)
+ggplot(data,aes(ind,batch,fill = group)) + geom_col() + theme_xkcd()
+```
+
+---
+
+## Three types of batch effects - Mixed
+
+```{r echo=FALSE,out.width='61.8%'}
+# Mixed batch
+batch <- c(2,2,7,7,7,7,7,3,3,3) + seq(0,9,length.out = 10)
+group <- factor(c(rep(1,5),rep(2,5)))
+ind <- factor(c(1:10))
+data <- cbind.data.frame(group,batch,ind)
+ggplot(data,aes(ind,batch,fill = group)) + geom_col() + theme_xkcd()
+```
+
+---
+
+## Multiple Compounds
+
+```{r bem,echo=FALSE,out.width='70%'}
+getsample <- function(n){
+        batch <- NULL
+        for (i in 1:n){
+        batchin <- seq(1,10,length.out = 10) * rnorm(1)
+        batchde <- seq(10,1,length.out = 10) * rnorm(1)
+        batchblock <- c(rep(rnorm(1),2),rep(rnorm(1),5),rep(rnorm(1),3))
+        
+        batchtemp <- batchin*sample(c(0,1),1) + batchde*sample(c(0,1),1) + batchblock*sample(c(0,1),1)
+        
+        batch <- rbind(batch,batchtemp)
+        }
+        return(batch)
+}
+
+d <- getsample(30)
+df <- expand.grid(Compound = as.character(c(1:30)),index = as.character(c(1:10)))
+df$intensity <- c(d)
+ggplot(data = df, aes(x = index, y = Compound)) +
+  geom_tile(aes(fill = intensity)) + theme_xkcd()
+```
+
+---
+
+## Summary
+
+- Batch effect for single compound is complex
+
+  - monotone (decreasing/increasing)
+  
+  - block
+  
+  - mixed
+
+- Different compounds would have different types of batch effects
+
+- Batch effect should have patterns, otherwise just noise
+
+  - For noise, adjust your pretreatment
+  
+  - For batch effect, correct is possible by data analysis/randomized experimental design
+
+---
+
+## How to find batch effects
+
+### Pooled QC
+
+- Clusters on PCA score plot
+
+- Check the selected ions if they changes in the same way as Pooled QC
+
+### Blank
+
+- Show stability about instrument
+
+- Check if abnormal peaks appeared
+
+### Visulization
+
+- Heatmap
+
+- TIC overlap
+
+---
+
+## How to find batch effects
+
+### Check the domination factor
+
+### Known batch
+
+- Linear regression with sequences/blocks
+
+- Check the slope and p-values of $\beta$
+
+        - Slope's positive/negative ratio
+        - p-values distribution
+
+### Unknown batch
+
+- Residual analysis of linear regression
+        
+        - PCA score plot
+        - Plot the residual
+
+---
+
+class: inverse, center, middle
+
+# Why
+
+---
+
+## Different Operators & Dates & Sequences
+
+```{r echo=FALSE,out.width='50%',fig.align='center'}
+knitr::include_graphics('https://media.giphy.com/media/l4Jz3a8jO92crUlWM/giphy.gif')
+```
+
+
+> You will never know each magic detail of each operator, even you did the experiment
+
+.half[
+```{r berref,results = 'asis'}
+doi <- c('10.1038/nrg2825')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+---
+
+## Different Instrumental Condition
+
+- Different instrumental parameters
+
+- Poor quality control
+
+- Sample contamination during the analysis
+
+  - Column (Pooled QC)
+  
+  - Matrix effects (ions suppression or/and enhancement)
+
+---
+
+## Unknown Unknowns
+
+> ... But there are also unknown unknowns – the ones we don't know we don't know. And if one looks throughout the history of our country and other free countries, it is the latter category that tend to be the difficult ones. -- Rumsfeld
+
+- Some batch effects could be tracked and recorded in advance
+
+- Some batch effects could not be found until the data are done
+
+---
+class: inverse, center, middle
+
+# Batch Correction
+
+---
+
+# Experimental Design
+
+- Cap the sequence with Pooled QC
+
+- Randomized samples sequence
+
+  - You might loss discorvery
+  - Robust
+
+- Internal standards/Instrumental QC
+
+  - Targeted analysis
+  - Not practical for non-targeted analysis
+  - Help to find the source of batch effects
+
+---
+
+## Randomized samples sequence
+
+### Real values
+```{r}
+set.seed(30)
+# real peaks
+group <- factor(c(rep(1,5),rep(2,5)))
+con <- c(rnorm(5,5),rnorm(5,8))
+re <- t.test(con~group)
+```
+
+- Group 1 : `r round(con[1:5],4)`
+
+- Group 2 : `r round(con[6:10],4)`
+
+- Batch: `r round(seq(0,5,length.out = 10),4)`
+
+- T-test: t value `r round(re$statistic,4)`, p value `r round(re$p.value,4)`
+
+---
+
+### Real values with increasing batch effects
+
+```{r}
+# real peaks
+group <- factor(c(rep(1,5),rep(2,5)))
+con <- c(rnorm(5,5),rnorm(5,8))
+batch <- seq(0,5,length.out = 10)
+ins <- batch+con
+re <- t.test(ins~group)
+```
+
+- Group 1 : `r round(ins[1:5],4)`
+
+- Group 2 : `r round(ins[6:10],4)`
+
+- T-test: t value `r round(re$statistic,4)`, p value `r round(re$p.value,4)`
+
+### Randomized sequnces with increasing batch effects
+
+```{r}
+index <- sample(10)
+ins <- batch+con[index]
+re <- t.test(ins~group[index])
+```
+
+- Group 1 : `r round(ins[group[index]==1],4)`
+
+- Group 2 : `r round(ins[group[index]==2],4)`
+
+- T-test: t value `r round(re$statistic,4)`, p value `r round(re$p.value,4)`
+
+> Batch effects might not change the conclusion when the effect size is relatively small
+
+---
+
+### Real values with decreasing batch effects
+
+```{r}
+# real peaks
+group <- factor(c(rep(1,5),rep(2,5)))
+con <- c(rnorm(5,5),rnorm(5,8))
+batch <- seq(5,0,length.out = 10)
+ins <- batch+con
+re <- t.test(ins~group)
+```
+
+- Group 1 : `r round(ins[1:5],4)`
+
+- Group 2 : `r round(ins[6:10],4)`
+
+- T-test: t value `r round(re$statistic,4)`, p value `r round(re$p.value,4)`
+
+### Randomized sequnces with decreasing batch effects
+
+```{r}
+index <- sample(10)
+ins <- batch+con[index]
+re <- t.test(ins~group[index])
+```
+
+- Group 1 : `r round(ins[group[index]==1],4)`
+
+- Group 2 : `r round(ins[group[index]==2],4)`
+
+- T-test: t value `r round(re$statistic,4)`, p value `r round(re$p.value,4)`
+
+> Randomization could not guarantee the results
+
+---
+
+## Randomized samples sequence
+
+- ### Always use randomized samples sequence to avoid batch effects
+
+- ### Not always work
+
+- ### Correction would be in right direction
+
+- ### The effect size and batch effect size matters
+
+---
+
+## Regular correction methods
+
+- ### Normalized by group mean/median/sum/quantile
+
+- ### Normalized by certain ions/samples
+
+- ### Scaling within single sample
+
+- ### Transformation
+
+- Similar to randomized samples sequence
+
+- No guarantee for result
+
+- Transformation is required for some model based correction
+
+- [NOREVA](http://idrb.zju.edu.cn/noreva/)
+
+---
+
+## Model Based Correction
+
+### Basic model
+
+$$Intensity =  Average + Condition + Batch + Error$$
+
+- Intensities are combination of real signal, patterned batch effect and pure noise
+
+- Regression model
+
+- Correction means the removal of batch part
+
+- Linear Models for MicroArray Data(LIMMA) model
+
+- Combat
+
+        - Empirical Bayesian framework based batch correction
+
+---
+
+## How to get batch effects
+
+- Known factors
+
+- Unknown factors
+
+> For unknown factors, they have stable patterns. Batch effects could be treated as hidden factor
+
+### Desired hidden factor
+
+- Less assotiation with orginal group information
+
+- Strong assotiation with unknown group
+
+---
+
+## Methods to construct hidden factor
+
+- Principal component analysis
+
+  - Use the principal components for linear model
+  - Interactive re-weighted process on residual matrix
+
+- Factor analysis
+
+  - Factor Analysis for Multiple Testing (FAMT)
+
+- Bayesian mixture model
+
+  - RRmix
+
+### Try to find
+
+- Batch variable: 1,1,3,3,3,3,3,6,6,6
+
+---
+
+## Summary
+
+- ### Single peak is not suitable to correct all peaks
+
+- ### Model based correction is supervised method
+
+- ### Those models could be overfitted
+
+---
+class: inverse, center, middle
+
+# Evaluation
+
+---
+
+## Commen Methods
+
+-  Show intragroup variations
+
+  - Smaller variations mean good correction
+
+  - Supervised methods
+
+- Show influences on differential analysis
+
+  - More or less features would be found
+
+  - annotation or prior knowledge about those features
+
+- Independent correction methods
+
+  - Strong evidence always strong, while we might already know before
+
+- Influences on spiked-in compounds 
+
+  - Correction should not go outside of spiked-in compounds or compounds with similar structures
+
+.half[
+```{r evaref,results = 'asis'}
+doi <- c('10.1093/nar/gkx449')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+---
+
+## Simulation
+
+- From unknown unknowns to preso known knowns
+
+- How to simulate unknown compounds?
+
+  - Based on real data
+  - At peaks levels
+  - From one samples to multiple samples
+  - Simulate the batch effects 
+  
+- Evaluation
+
+  - Check the influences base on sensitivity and accuracy
+
+---
+
+## Statistical properties of group average intensities
+
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/insdis.jpg')
+```
+
+- MTBLS28
+- UPLC-Q-TOF Positive/Homo sapiens
+- Gender/Race/Smoking/Sample Type
+- 1005 samples/24 groups/1807 peaks
+
+---
+
+## Statistical properties of RSD% within groups
+
+```{r echo=FALSE,out.width='61.8%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/rsddis.jpg')
+```
+
+- MTBLS28
+- UPLC-Q-TOF Positive/Homo sapiens
+- Gender/Race/Smoking/Sample Type
+- 1005 samples/24 groups/1807 peaks
+
+---
+
+## Gap between peaks and compounds
+
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/peakcom.png')
+```
+
+---
+
+## Simulation recipes
+
+- Generate compounds peaks intensities based on intensity Weibull distribution
+- Add the correlated peaks to simulate real compounds
+- Generate replicated samples according to RSD% Weibull distribution
+- Define the proportion of peaks influenced by groups and batches
+- Add the predefined changes (exponential distribution) among groups and batches
+- Evaluation - ROC curve
+
+---
+
+## Simulation
+
+- 1000 peaks
+- 800 compounds
+- 2 groups with 10 samples in each group
+- 50 peaks influenced by groups
+- 3 batches with 8, 5, 7 samples in each batches
+- 100 peaks influenced by batches
+- Weibull distribution shape 2, scale 3 for peaks intensities
+- Weibull distribution shape 1, scale 0.18 for RSD% among groups
+
+---
+
+## Method Evaluation
+
+```{r echo=FALSE}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/bemc.png')
+```
+
+.half[
+```{r bems,results = 'asis'}
+doi <- c('10.1093/nar/gkx449')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+---
+
+## Summary
+
+- Statistical distribution matters
+
+- Any batch correction method might works, including no correction
+
+- One compound with multiple peaks would reduce the true positive rate
+
+- Batch correction should consider false positive control
+
+- Try simulation first!!!
+
+- [mzrtsim](https://github.com/yufree/mzrtsim) package
+
+---
+
+class: inverse, center, middle
+
+# Q&A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/

@@ -1,0 +1,450 @@
+---
+title: "Metabolomics Data Analysis"
+subtitle: "Demo"
+author: "Miao Yu"
+date: "2018/07/13(updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.align='center',echo = T, cache=T,message=FALSE,warning=FALSE,comment=NA)
+```
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+# Don't Panic
+
+```{r echo=FALSE,out.width='72%', fig.cap='When you change one parameter in your code...'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/onecode.gif')
+```
+
+---
+
+class: inverse, center, middle
+
+# Workflow
+
+---
+
+# Project Setup
+
+## Data
+
+- Different groups should assign different sub-folder
+
+## Anno
+
+- For annotation results
+
+## Workflow.Rmd
+
+- Templete script for reproducible research
+
+---
+
+# Data conversion
+
+```{r echo=FALSE,out.width='60%', fig.cap='MSconvert'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/MSconvert.png')
+```
+
+.half[
+```{r msconvert,results = 'asis',echo=FALSE}
+doi <- c('10.1093/bioinformatics/btn323')
+cat(unlist(rcrossref::cr_cn(dois = doi, format = "text", style = 'apa')))
+```
+]
+
+---
+
+# Session Info
+
+```{r session, echo=TRUE}
+# record the software version
+sessionInfo()
+```
+
+---
+
+# Optimization
+
+```{r IPOpos, eval=F}
+library(IPO)
+library(xcms)
+# the path should be some pool QC samples
+path <- list.files('D:/metademo/data/oq/',full.names = T,recursive = T)
+# find the parameters for peak picking algorithm
+peakpickingParameters <- getDefaultXcmsSetStartingParams('centWave')
+# for obitrap, ppm should be 5
+peakpickingParameters$ppm <- 15
+resultPeakpicking <- 
+  optimizeXcmsSet(files = path, 
+                  params = peakpickingParameters,
+                  nSlaves = 1,
+                  subdir = NULL)
+# find the parameters for retention time correction algorithm, obiwarp
+optimizedXcmsSetObject <- resultPeakpicking$best_settings$xset
+retcorGroupParameters <- getDefaultRetGroupStartingParams()
+resultRetcorGroup <-
+  optimizeRetGroup(xset = optimizedXcmsSetObject, 
+                   params = retcorGroupParameters, 
+                   subdir = NULL)
+writeRScript(resultPeakpicking$best_settings$parameters, 
+             resultRetcorGroup$best_settings)
+```
+
+---
+
+### IPO package
+
+$$Peak\ Picking\ Score = \frac{reliable\ peaks^2}{all\ peaks - low\ intensity\ peaks}$$
+
+- RPs are defined as peaks that belong to an isotopologue.
+
+  - mass range
+  
+  - retention time
+  
+  - intensity
+
+$$retention\ time\ correction\ and\ grouping\ target\ value  = norm(RCS) + norm(GS)$$
+
+- Retention time correction could also be optimized
+
+---
+
+# Wrap function
+
+```{r getmzrt,eval=F}
+library(xcms)
+getrtmz <- function(path,index = NULL) {
+  path <- list.files(path, full.names = T, recursive = T)
+  if(!is.null(index)){path <- path[index]}
+  xset <- xcmsSet(
+    files = path,
+  method = "centWave",peakwidth = c(9.9264, 91.7),ppm = 15, 
+  noise = 0, snthresh = 10, mzdiff = 0.0020888, 
+  prefilter = c(3, 100), mzCenterFun = "wMean", integrate = 1,
+  fitgauss = FALSE,verbose.columns = FALSE) # peak extraction
+  xset <- retcor(
+    xset,
+    method = "obiwarp", plottype = "none", distFunc = "cor_opt",
+    profStep = 1, center = 1, response = 1, gapInit = 0.928,
+    gapExtend = 2.7, factorDiag = 2, factorGap = 1,
+    localAlignment = 0) # retention time correction
+  xset <- group(
+    xset,
+    method  = "density", bw = 0.879999999999999, 
+    mzwid   = 0.01932, minfrac = 1, minsamp = 1, max = 50) # peak grouping
+  xset <- fillPeaks(xset) # peak filling
+  return(xset)
+}
+```
+
+---
+
+# Peaks list
+
+```{r peaklist, eval=F,echo=T}
+# get the xcmsset object
+pos <- getrtmz('D:/metademo/data/')
+# back up the xcmsset object
+save(pos,file = 'pos.Rdata')
+load('pos.Rdata')
+# get the EIC, boxplot and diffreport, eixmax should be equal to the numbers of peaks groups in the pos objects 
+
+report <- annotateDiffreport(pos,filebase = 'peaklistpos',metlin = T, eicmax = 3094, classeic = xset@phenoData$class)
+# save the report as a csv file
+write.csv(report,file = 'all.csv')
+# get the csv file for Metaboanalyst.ca
+enviGCMS::getupload(pos,name = 'metabo')
+```
+
+---
+
+# Peaks filtering
+
+```{r filter,eval=F}
+# get the peak intensity, m/z, retention time and group information as list
+mzrt <- enviGCMS::getmzrt(pos)
+
+# get the mean and rsd for each group
+mzrtm <- enviGCMS::getdoe(mzrt)
+gm <- mzrtm$groupmean
+gr <- mzrtm$grouprsd
+
+# find the blank group and pool QC group
+blk <- grepl('blk',colnames(gm)))
+pqc <- grepl('qc',colnames(gm))
+
+# filter by pool QC and blank's group mean intensity(pool QC should larger than three times of blank), return numbers and index
+sum(indexmean <- apply(gm,1,function(x) all(x[pqc]>= 3*x[blk])))
+
+# filt by pool qc rsd%, return numbers and index
+rsdcf <- 30
+sum(indexrsd <- apply(gm,1,function(x) ifelse(is.na(x[pqc]),T,x[pqc]<rsdcf)))
+
+# overlap with rsd% and mean filter
+sum(index <- indexmean&indexrsd)
+
+```
+
+---
+
+# Peaks filtering
+
+```{r eval=F}
+# new list, update group and remove pool qc/blk
+qcindex <- grepl('blk',mzrt$group$class) | grepl('qc',mzrt$group$class)
+mzrtfilter <- list(data = mzrt$data[index,!qcindex],
+                   mz = mzrt$mz[index],
+                   rt = mzrt$rt[index],
+                   group = mzrt$group)
+mzrtfilter$group$class <- mzrt$group$class[!qcindex]
+```
+
+- The average intensities in pool QC for each peak should larger than three tims of the average intensities in blank sample
+
+- RSD% less than 30% in Pooled QC to remove batch effects
+
+---
+
+# Normalization
+
+```{r norm, eval = F}
+# visulize the batch effect
+mzrtsim::rlaplot(mzrt$data,lv = mzrt$group$class)
+mzrtsim::ridgesplot(mzrt$data,lv = mzrt$group$class)
+# get the simulation data and test on NOREVA
+sim <- mzrtsim::simmzrt(mzrt$data)
+mzrtsim::simdata(sim)
+# correct the batch effect by sva
+mzrtcor <- mzrtsim::svacor(mzrt$data,lv = mzrt$group$class)
+# visulize the batch effect correction
+li <- mzrtsim::limmaplot(mzrtcor,lv = mzrt$group$class)
+# return the corrected data
+mzrt$data <- mzrtcor$dataCorrected
+```
+
+---
+
+# Statistical analysis
+
+## Exploratory data analysis
+
+```{r pca,eval=F}
+# visulize the data
+enviGCMS::plotmr(mzrtfilter)
+# PCA
+enviGCMS::plotpca(mzrtfilter$data,
+                  as.character(mzrtfilter$group$class))
+```
+
+- Find the confonding factors or inner correlationship among variables/samples
+
+- Correlationship/Cluster/Similarity/Dimension reducing analysis
+
+---
+# Statistical analysis
+
+## Linear mixed model
+
+- Fixed effects: Treatment/Control
+
+- Random effects: individual variances
+
+- $$y = Fixed\ effects + (random\ slope\ variable|random \ baseline\ variable)$$
+
+- [More](https://web.stanford.edu/class/psych252/section/Mixed_models_tutorial.html#getting-p-values)
+---
+
+# Statistical analysis
+
+## Split the data
+
+```{r ml,eval=F}
+library(caret)
+## Spliting data
+trainIndex <- createDataPartition(variable, p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+## Get the training and testing datasets
+Train <- data[ trainIndex,]
+Test  <- data[-trainIndex,]
+
+```
+
+- Variables should be larger than sample numbers
+- Train datasets are used to build the model
+- Test datasets are used to evaluate the final model
+- [More](http://topepo.github.io/caret/)
+
+---
+# Statistical analysis
+
+## Tune the model
+
+```{r tune,eval=F}
+fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+```
+
+- General parameters training control
+
+- Cross validation
+
+- Performance Metrics(RMSE or ROC)
+
+---
+# Statistical analysis
+
+## Tune the specific model
+
+```{r smpara}
+# extra papameters for GBM 
+gbmGrid <-  expand.grid(interaction.depth = c(1, 5, 9), 
+                        n.trees = (1:30)*50, 
+                        shrinkage = 0.1,
+                        n.minobsinnode = 20)
+```
+
+- Different models have different parameters
+
+- Use `expand.grid` to add the tuning for them
+
+---
+# Statistical analysis
+
+## Train the model
+
+```{r trm,eval=F}
+set.seed(825)
+gbmFit <- train(Class ~ ., data = training, 
+                 method = "gbm", 
+                 trControl = fitControl, 
+                 verbose = FALSE, 
+                 ## Now specify the exact models 
+                 ## to evaluate:
+                 tuneGrid = gbmGrid)
+# show the fitting process
+plot(gbmFit)  
+```
+
+- Fit the model based on the tuning parameters
+
+- Show the fitting results
+
+---
+# Statistical analysis
+
+## Model selection
+
+```{r ms,eval=F}
+# ANOVA analysis
+anova(fit1,fit2)
+```
+
+- Check which model show improvements of the variances explained
+
+---
+# Statistical analysis
+
+## Variable importance
+
+```{r VIP,eval=F}
+Imp <- varImp(fit)
+plot(Imp)
+```
+
+- Not all models have the variable impartance evaluation
+
+- `varImp` could be used to evaluate variable importance if possible
+
+---
+
+# Annotation
+
+```{r annotation,eval=F}
+library(xMSannotator)
+num_nodes = 10
+data("adduct_weights")
+annolipid <- xsetplus::fanno(pos,outloc = 'D:/storage/data/anno', mode = 'pos', db_name = 'hmdb')
+```
+
+---
+
+# Pathway Analysis
+
+```{r pathway,eval = F}
+# get the file
+xsetplus::mumdata(pos,lv = mzrt$group$class)
+# http://mummichog.org/index.html
+mummichog1 -f 'test.txt' -o myResult
+```
+
+- [More](http://mummichog.org/index.html)
+
+---
+
+# XCMS online
+
+https://xcmsonline.scripps.edu/
+
+---
+
+# Metaboanalyst
+
+http://www.metaboanalyst.ca/
+
+---
+
+# NOREVA
+
+http://idrb.zju.edu.cn/noreva/
+
+---
+
+# Reproducible research
+
+- Report software version
+
+- Avoid GUI
+
+- Report script
+
+- Share raw data
+
+```{r echo=FALSE}
+# a single file
+xfun::embed_file('workflow.Rmd')
+```
+
+---
+
+class: inverse, center, middle
+
+# Q&A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/

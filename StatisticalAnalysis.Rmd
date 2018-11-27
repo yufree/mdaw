@@ -1,0 +1,671 @@
+---
+title: "Metabolomics Data Analysis"
+subtitle: "Statistical Analysis"
+author: "Miao Yu"
+date: "2018/07/05(updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["default", "my-theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.align='center',echo = F, cache=T,message=FALSE,warning=FALSE,comment=NA)
+```
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-43118729-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+## Don't Panic
+
+```{r echo=FALSE,out.width='72%', fig.cap='Paper method v.s. Practical method in Metabolomics'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/owl.png')
+```
+
+???
+most of the papers looks like owl and they only show two circle to explain how they process the data
+
+---
+class: inverse, center, middle
+
+# Basic Statistical Analysis
+
+---
+
+## Statistic
+
+$$Statistic = f(sample_1,sample_2,...,sample_n)$$
+
+- Statistics describe certain property among the samples
+        
+- Statistics could be designed for certain purpose
+
+- Statistics extract signal and remove noise
+
+???
+Statistical Inference is based on statistic
+
+---
+
+## Null Hypothesis Significance Testing (NHST)
+
+- H0: nothing happens
+- H1: something happens
+- P value: probability of certain statistics happens under H0 (pre-defined distribution)
+
+> Small P value doesn't mean the effect is strong!
+
+- Decision based on P value
+
+> NHST could only tell you $p(D|H0)$, not $p(H0|D)$!
+
+- P Value Demo: http://rpsychologist.com/d3/NHST/
+
+---
+
+## Multiple Comparision
+
+- One comparison test, false positive 
+
+$$ 1- (1 - 0.05) = 0.05$$
+
+- Two comparison tests, false positive 
+
+$$1 - (1 - 0.05)^2 = 0.0975$$
+
+- Ten comparison tests, false positive
+
+$$1 - (1 - 0.05)^{10} = 0.4012$$
+
+- More tests, more chances to get false positive
+
+- Thousands of peaks means thousands of tests, single cutoff would find lots of false positive
+
+- False Discovery Rate(FDR) control is required for multiple tests
+
+---
+
+## FDR Control - Simulation
+
+```{r phist, cache=TRUE}
+par(mfrow = c(1,3))
+set.seed(42)
+pvalue <- NULL
+for (i in 1:10000){
+  a <- rnorm(10)
+  b <- rnorm(10)
+  c <- t.test(a,b)
+  pvalue[i] <- c$p.value
+}
+hist(pvalue, main = '10000 Random tests')
+set.seed(42)
+pvalue <- NULL
+for (i in 1:10000){
+  a <- rnorm(10,1)
+  b <- a+1
+  c <- t.test(a,b)
+  pvalue[i] <- c$p.value
+}
+hist(pvalue, main = '10000 tests with real effects')
+
+set.seed(42)
+pvalue <- NULL
+for (i in 1:5000){
+  a <- rnorm(10,1)
+  b <- a+1
+  c <- t.test(a,b)
+  pvalue[i] <- c$p.value
+}
+for (i in 1:5000){
+  a <- rnorm(10,1)
+  b <- rnorm(10,1)
+  c <- t.test(a,b)
+  pvalue[i+5000] <- c$p.value
+}
+
+hist(pvalue, main = '5000 tests with real effects')
+```
+
+---
+
+## FDR Control - Q-value
+
+### Benjamini-Hochberg method
+
+$$p_i \leq \frac{i}{m} \alpha$$
+
+- $\alpha$ means the cutoff of p value, i means the rank of certain test and m means the numbers of comparison
+
+- Adjusted p value for FDR control
+
+### Storey Q value 
+
+$$\hat\pi_0 = \frac{\#\{p_i>\lambda\}}{(1-\lambda)m}$$
+
+- Directly estimation of FDR from p-value's distribution
+
+- Q value means the FDR for each test
+
+???
+BH method is also called as Q value. Storey Q value is not that stable as BH method
+---
+
+## Publication Bias
+
+```{r pva,echo=FALSE,out.width='68%'}
+knitr::include_graphics('https://yufree.cn/images/pvalue-1.png')
+```
+
+???
+This is publication bias or "cherry-picking". Try to avoid p value in the future.
+
+---
+
+## Summary
+
+- ### P values are used for NHST
+
+- ### Multiple Comparisions would produce multiple P values
+
+- ### FDR control should be performed to corrected P values or generate Q values
+
+- ### NHST is not perfect
+
+---
+
+## Bayesian Hypothesis Testing
+
+$$p(H0|D) \propto p(D|H0) p(H0)$$
+
+- Posterior is proportional to the likelihood times the prior
+
+$$Bayes\ factor = \frac{p(D|Ha)}{p(D|H0)} = \frac{posterior\ odds}{prior\ odds}$$
+
+- Bayes factor could show the differences between null hypothesis and any other hypothesis
+
+- Bayesian Inference Demo: http://rpsychologist.com/d3/bayes/
+
+---
+
+## Statistical Model
+
+$$Target = g(Statistic) = g(f(sample_1,sample_2,...,sample_n))$$
+
+- Use statistics to make prediction/explanation
+
+- Use parameters to fit the data
+
+- Based on real data and/or hypothesis
+
+- Diagnosed by other statistics( $R^2$, $ROC$)
+
+- We could tune statistical models by parameters or make model selection
+
+---
+
+## T Test
+
+### Statistic 
+
+$$ t = \frac{\bar x - \mu}{\frac{\sigma}{\sqrt n}} $$
+
+### T-distribution: http://rpsychologist.com/d3/tdist/
+
+- 1-sample T-test: test the mean if it is 0
+
+- 2-sample unpaired T-test: test the distance between two group if it is 0
+
+- 2-sample paired T-test: test the paired distance between two group if it is 0
+
+---
+
+## One-Way Anova
+
+### Statistic 
+
+$$ F = \frac{explained\ variance}{unexplained\ variance} $$
+
+### F-test in ANOVA could show certain factor's influcences
+
+### F-test for two groups is equaly to T-test with equal variances
+
+### F-test could also used for the investigation of more than one factor
+
+---
+
+## Parametric v.s. Non-parametric Test
+
+- Most of parametric test need assumptions for data
+
+  - T-test: samples are from normal distribution population
+  - F-test: each group should have same variances
+
+- You need extra tests to test the assumption before using parametric test
+
+- Non-parametric tests are "distribution-free"
+
+- Always using non-parametric test is safe with less power(hard to find differences)
+
+---
+
+## Linear Regression
+
+$$Y = \beta_0 + \beta_1x_1 + \beta_2x_2 + ... + \beta_nx_n$$
+
+### One-way ANOVA is a special case of linear regression
+
+- $\beta$ is dummy variable
+
+### Linear model is the major model for peaks list data analysis
+
+$$Intensity = Group + Random\ Error$$
+
+- Each peaks' intensity is a combination of group mean and random error
+???
+T-test: peaks show differences among two groups
+One-way ANOVA: peaks show differences among multiple groups
+Linear regression could replace both of them in most cases
+
+---
+
+## Linear Regression
+
+$$Intensity = Group + Random\ Error$$
+
+- After regression, you could get the parameters for each group.
+
+- A T-test would be used to test whether the parameter is 0 or not
+
+- If the parameter show no significant differences with 0, the group information might show limited contribution for this peak intensity
+
+- This peak would not be suitable to predict the group
+
+- You also need FDR control for regression analysis
+
+- You could use F-test to test the variances explained ($R^2$)
+
+---
+
+## Time Series Analysis
+
+$$Intensity_{t} = Intensity_{t-1} + Group + Random$$
+
+- Data points on time series has auto-correlation
+
+- Regression analysis is not suitable for time series
+
+- Survival analysis might also be used in certain context
+
+> If you know nothing about time series analysis, just show trends without claim statistical analysis
+
+---
+
+## Bio-marker or Model Prediction
+
+### Bio-marker: peaks which could show the group information
+
+$$Group = f_m(peak_m) $$
+
+- Select one bio-marker by statistical analysis 
+- Use bio-marker to make prediction
+- Use bio-information to explain the mechanism
+
+### Model Prediction
+
+$$Group/Value = f_m(peak_1, peak_2, ...,peak_n)$$
+
+- The target could be either categorical or continuous variable
+- Construct a model with multiple peaks
+- Use the peaks list to make prediction
+
+---
+
+## Model Evaluation
+
+### Sensitivity is true positive in all real positive
+
+$$Sensitivity = \frac{Group_{TP}}{Group_{TP}+Group_{FN}}$$
+
+### Specificity is true negative in all real negative
+
+$$Specificity = \frac{Group_{TN}}{Group_{TN}+Group_{FP}}$$
+
+### Accuracy is right prediction in all prediceted value
+
+$$Accuracy = \frac{Group_{TP}+Group_{TN}}{Group_{TP}+Group_{TN}+Group_{FP}+Group_{FN}}$$
+
+- [More](https://en.wikipedia.org/wiki/Sensitivity_and_specificity#Graphical_illustration)
+
+???
+This is actually not the same with analytically chemistry. A higher sensitivity model could avoid false negative. A higher specificity model could avoid false positive. The accuracy would not distinguish such things.
+
+---
+
+## ROC Curve
+
+<a title="By Sharpr [CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)], from Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:ROC_curves.svg"><center><img width="600" alt="ROC curves" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/ROC_curves.svg/512px-ROC_curves.svg.png"></center></a>
+
+- x axis: 1-Specificity (False positive rate) y axis: Sensitivity (True positive)
+
+???
+For certain model, certain cutoff(p-value) could show one point. Change the cutoff, each model could have certain ROC curve. If ROC curve goes to the top left corner, corresponding model would show better performance.
+
+---
+
+## Summary
+
+### Statistic is used to show properties of data set
+
+### Statistical inference is used to draw conclusion
+
+### Statistical model is used to make explaination/prediction
+
+### Statistical model could be evaluated and selected
+
+---
+class: inverse, center, middle
+
+# Advanced Statistical Analysis
+
+---
+
+## Bias-Variance Tradeoff
+
+$$E[(y - \hat f)^2] = \sigma^2 + Var[\hat f] + Bias[\hat f]$$
+```{r bv,echo=FALSE,out.width='68%'}
+knitr::include_graphics('http://scott.fortmann-roe.com/docs/docs/BiasVariance/biasvariance.png
+')
+```
+
+- Underfit: large Bias, small variance
+- Overfit: small Bias, large variance
+
+---
+
+## Cross-validation
+
+### Jacknife
+
+- Estimation of model parameters use all data
+
+- Leave out 1 sample and make estimation of model parameters again
+
+- Calculate the difference between 'full' model and 'leave one out' model
+
+- Repeat selections of 1 sample for the entire data set
+
+- Use the differences to estimate the model performance
+
+---
+
+## Cross-validation
+
+### bootstraping
+
+- Estimation of model parameters use all data
+
+- Sampling data with replacements and make estimation of model parameters again
+
+- Calculate the difference between 'full' model and 'bootstraping' model
+
+- Repeat sampling for the entire data set
+
+- Use the differences to estimate the model performance
+
+---
+
+## Cross-validation
+
+### 5-fold Cross-validation
+
+```{r cv,echo=FALSE,out.width='72%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/cvdata.png')
+```
+
+???
+Split data into training dataset(60%), validation dataset(20%) and test dataset(20%)
+Training set is used to build model
+Validation set is used to turn the parameters for the training set model
+When the model is done, use test set to show the final performance
+
+---
+
+## Regularization
+
+$$RSS = \sum_{i=1}^n(y_i - f(x_i))^2$$
+
+- Residual sum of squares(RSS) is always minimized to build the model
+- To avoid overfitting, regularization is always applied to penal the parameters
+
+- Rigid regression(L2)
+
+$$RSS + \lambda \sum_{j = 1}^{p} \beta_j^2$$
+
+- Lasso regression(L1)
+
+$$RSS + \lambda \sum_{j = 1}^{p} |\beta_j|$$
+
+---
+class: inverse, center, middle
+
+# Common Models
+
+---
+
+## Supervised v.s. Unsupervised
+
+### Supervised model
+
+$$y = f(x)$$
+
+- Supervised model could be trained by target
+
+### Unsupervised model
+
+$$x = g(x)$$
+
+- Unsupervised model try to explore the structure within samples/variables
+
+---
+
+## Principle Component Analysis
+
+### Unsupervised model
+
+### Peaks are not indenpendent
+
+- use principle components to show the major variances
+- each principle component is a liner combination of peaks with loading
+
+### Samples could be visulized in 2D/3D mode in score plot
+
+- When the first 2or3 principle components could show 80% variances
+
+- If the samples are clustered, they might be similar on the major principle components
+
+
+???
+PCA is an Exploratory Data Analysis(EDA) method, not statistical inference with p value. Conclusion should be validated by extra statistical methods or simulation
+
+---
+
+## Partial Least Squares Discriminant Analysis (PLSDA)
+
+### Supervised model
+
+- The principle components follow the direction of the target variable or group information
+
+### Peaks are not indenpendent
+
+- For PCA, both new variables and classes are orthogonal
+- For PLSDA(Wold), only new classes are orthogonal. 
+- For PLS(Martens), only new variables are orthogonal. 
+
+### Sparse PLS-DA make a L1 penal on the variable selection
+
+- remove the influences from unrelated variables
+
+???
+Partial least squares discriminant analysis(PLSDA) was first used in the 1990s. However, Partial least squares(PLS) was proposed in the 1960s by Hermann Wold. Principal components analysis produces the weight matrix reflecting the covariance structure between the variables, while partial least squares produces the weight matrix reflecting the covariance structure between the variables and classes. After rotation by weight matrix, the new variables would contain relationship with classes. 
+
+The classification performance of PLSDA is identical to linear discriminant analysis(LDA) if class sizes are balanced, or the columns are adjusted according to the mean of the class mean. If the number of variables exceeds the number of samples, LDA can be performed on the principal components. Quadratic discriminant analysis(QDA) could model nonlinearity relationship between variables while PLSDA is better for collinear variables. However, as a classifier, there is little advantage for PLSDA. The advantages of PLSDA is that this modle could show relationship between variables, which is not the goal of regular classifier.
+
+Different algorithms for PLSDA would show different score, while PCA always show the same score with fixed algorithm. For PCA, both new variables and classes are orthognal. However, for PLS(Wold), only new classes are orthognal. For PLS(Martens), only new variables are orthognal.
+
+Sparse PLS discriminant analysis(sPLS-DA) make a L1 penal on the variable selection to remove the influnces from unrelated variables, which make sense for high-throughput omics data[@lecao2011].
+
+For o-PLS-DA, s-plot could be used to find features.[@wiklund2008]
+
+---
+
+## Partial Least Squares Discriminant Analysis (PLSDA)
+
+### Variable Importance in Projection (VIP) score
+
+- Concern on the certain projection related to target
+
+- Summary of importance of the variables and importance of projection
+
+### $R^2$ and $Q^2$
+
+- $R^2$ means the variance explained by your model
+- $Q^2$ is the measure of predictive ability of the model based on Cross validation
+- If your model has high $R^2$ while low $Q^2$, the model is overfitted
+
+---
+
+## Cluster Analysis
+
+### Unsupervised model
+
+- Use variables' distances among samples to show inner relationship
+
+- Find Homogeneity from Heterogeneity
+
+### Heatmap is always used
+
+### Commen algorithm
+
+- Hierarchical clustering
+
+- K-means
+
+- Self-organizing map
+
+---
+
+## Tree Based Model
+
+### Hierarchical model with multiple levels
+
+- At each level, different variables play roles in separation of samples
+
+- Each branch of the tree belong to certain groups
+
+```{r tree,echo=FALSE,out.width='68%'}
+knitr::include_graphics('https://yufree.github.io/presentation/figure/Tree.png')
+```
+
+???
+peaks could be used in different levels for separation
+Tree base model could also be used to select important variables
+
+---
+## Tree Based Model
+
+### Random forest
+
+- At each level use bootstrap to select peaks
+
+- Use multiple trees to vote for the separation
+
+- Variable importance could be computed by the influences on the separation
+
+- Each model is unique since random selection involved
+
+- Cross validation could be used to show a stable performance of important variables or peaks
+
+---
+
+## Tree Based Model
+
+### Boosting
+
+- General model
+
+- Each tree is based on previous tree and the parameters are weighted
+
+- New trees are shrank to fit the residual errors
+
+$$\hat f(x) = \sum_{b=1}^B \lambda \hat f^b(x)$$
+- When depth is 1, boosting is identical with additive model
+
+---
+
+## Support Vector Machine (SVM)
+
+- p-dimensional vector could be separate by (p-1)-dimensional hyperplane
+
+- Find the hyperlane to make largest separation between groups
+
+- Kernel function is used to map the higher-dimensional into a lower-dimension space
+
+- Similar to logistic regression with kernel function
+
+- Variable importance could also be computed by cross validation
+
+---
+
+## Artificial Neural Network (ANN)
+
+<a title="By Glosser.ca [CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)], from Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Colored_neural_network.svg"><center><img width="400" alt="Colored neural network" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Colored_neural_network.svg/256px-Colored_neural_network.svg.png"></center></a>
+
+???
+
+Hidden layer use different kernel functions
+
+---
+
+## Deep Learning
+
+```{r dl,echo=FALSE,out.width='90%'}
+knitr::include_graphics('http://neuralnetworksanddeeplearning.com/images/tikz36.png')
+```
+
+???
+multiple layers
+
+---
+
+## Summary
+
+### Cross-validation is important to evaluate the models
+
+### Supervised model use group information to build the model
+
+### Unsupervised model find Homogeneity from Heterogeneity
+
+### New models are always availiable
+
+---
+
+class: inverse, center, middle
+
+# Q&A
+
+## yufreecas@gmail.com
+
+## https://yufree.cn/metaworkflow/
