@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
   <head>
     <title>Metabolomics Data Analysis</title>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <meta name="author" content="Miao Yu" />
     <link href="libs/remark-css/default.css" rel="stylesheet" />
     <link rel="stylesheet" href="my-theme.css" type="text/css" />
@@ -14,7 +14,7 @@ class: center, middle, inverse, title-slide
 # Metabolomics Data Analysis
 ## Batch correction
 ### Miao Yu
-### 2018/07/11(updated: 2018-11-27)
+### 2018/07/11(updated: 2020-01-04)
 
 ---
 
@@ -235,11 +235,11 @@ class: inverse, center, middle
 
 
 
-- Group 1 : 5.8802, 6.6074, 5.4028, 7.8656, 9.3322
+- Group 1 : 3.7362, 5.4433, 8.1024, 7.8656, 9.9407
 
-- Group 2 : 8.8241, 9.0915, 10.2528, 9.4993, 11.0351
+- Group 2 : 7.9804, 8.2573, 10.2528, 11.6018, 10.6105
 
-- T-test: t value -3.3261, p value 0.0147
+- T-test: t value -2.1049, p value 0.0744
 
 &gt; Batch effects might not change the conclusion when the effect size is relatively small
 
@@ -249,21 +249,21 @@ class: inverse, center, middle
 
 
 
-- Group 1 : 8.9036, 8.9102, 7.4677, 7.0906, 8.0097
+- Group 1 : 9.0351, 9.225, 10.0926, 6.9214, 8.8142
 
-- Group 2 : 8.497, 10.2815, 9.838, 8.5134, 8.216
+- Group 2 : 8.9137, 9.8329, 9.3894, 7.7137, 10.2723
 
-- T-test: t value -1.7902, p value 0.1117
+- T-test: t value -0.5962, p value 0.568
 
 ### Randomized sequnces with decreasing batch effects
 
 
 
-- Group 1 : 8.348, 9.1208, 6.688, 5.4239, 4.6899
+- Group 1 : 9.7806, 10.6482, 9.3698, 4.5907, 3.5881
 
-- Group 2 : 13.216, 12.0602, 11.3926, 8.5134, 6.2748
+- Group 2 : 12.0552, 13.0501, 9.3804, 8.3582, 9.3894
 
-- T-test: t value -2.2587, p value 0.0587
+- T-test: t value -1.6698, p value 0.1412
 
 &gt; Randomization could not guarantee the results
 
@@ -504,6 +504,7 @@ class: inverse, center, middle
 
 ## https://yufree.cn/metaworkflow/
     </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({
 "highlightStyle": "github",
@@ -513,16 +514,74 @@ class: inverse, center, middle
 if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   window.dispatchEvent(new Event('resize'));
 });
-(function() {
-  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
   if (!r) return;
   s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
   d.head.appendChild(s);
-})();</script>
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
 
 <script>
 (function() {
-  var i, text, code, codes = document.getElementsByTagName('code');
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
   for (i = 0; i < codes.length;) {
     code = codes[i];
     if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
@@ -536,7 +595,8 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
     }
     i++;
   }
-})();
+};
+slideshow._releaseMath(document);
 </script>
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
