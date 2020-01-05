@@ -141,7 +141,7 @@ ggplot(data = df, aes(x = index, y = Compound)) +
 
   - For noise, adjust your pretreatment
   
-  - For batch effect, correct is possible by data analysis/randomized experimental design
+  - For batch effect, correction is possible by data analysis/randomized experimental design
 
 ---
 
