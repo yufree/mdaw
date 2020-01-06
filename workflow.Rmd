@@ -95,11 +95,20 @@ getrtmz <- function(path,index = NULL){
 }
 ```
 
+# xcms with fixed parameters
+
+If you want to skip parameter optimization for xcms, you could use function from `enviGCMS` package. You could check this [paper](https://www.nature.com/articles/nprot.2011.454) for those parameters.
+
+```{r eval=FALSE}
+# pmethod could be 'hplcorbitrap', 'uplcorbitrap', 'hplcqtof', 'hplchqtof', 'uplcqtof', 'uplchqtof'
+mzrt <- enviGCMS:::getdata(path,pmethod = 'hplcorbitrap')
+```
+
 # Peaks list
 
 This chunk is used to generate peaks list and related csv, xcmsset object, xcmsEIC object for further analysis.
 
-```{r eval=F}
+```{r}
 # get the xcmsset object from demo data
 path <- system.file("extdata/data", package = "rmwf")
 # use your own data
@@ -118,15 +127,15 @@ data("srmxset")
 # EIC for m/z 239.0911(four digits) and retention time 229.4s(one digits)
 plot(srmeic,srmxset,groupidx = 'M239.0911T229.4')
 # PCA
-enviGCMS::plotpca(data = mzrtfilter$data,lv = mzrtfilter$group)
+enviGCMS::plotpca(data = mzrt$data,lv = mzrt$group)
 # mzrt plot
-enviGCMS::plotmr(mzrtfilter)
+enviGCMS::plotmr(mzrt)
 # RSD plot
-enviGCMS::plotrsd(mzrtfilter)
+enviGCMS::plotrsd(mzrt)
 # density plot
-enviGCMS::plotden(mzrtfilter$data,lv=mzrtfilter$group,ylim = c(0,1))
+enviGCMS::plotden(mzrt$data,lv=mzrt$group,ylim = c(0,1))
 # heatmap
-enviGCMS::plothm(mzrtfilter$data,lv=factor(mzrtfilter$group),index = c(1:20))
+enviGCMS::plothm(mzrt$data,lv=factor(mzrt$group),index = c(1:20))
 # TSNE
 # rtsne_out <- Rtsne::Rtsne(t(mzrtfilter$data))
 # plot(rtsne_out)
