@@ -52,69 +52,43 @@ library(stringr)
 # data('para')
 load('para.RData')
 getrtmz <- function(path,index = NULL){
-  peakwidth <- c(para$min_peakwidth,para$max_peakwidth)
-  ppm <- para$ppm
-  noise <- para$noise
-  snthresh <- para$snthresh
-  mzdiff <- para$mzdiff
-  prefilter <- c(para$prefilter,para$value_of_prefilter)
-  integrate <- para$integrate
-  profStep <- para$profStep
-  center <- para$center
-  response <- para$response
-  gapInit <- para$gapInit
-  gapExtend <- para$gapExtend
-  factorDiag <- para$factorDiag
-  factorGap <- para$factorGap
-  localAlignment <- para$localAlignment
-  bw <- para$bw
-  mzwid <- para$mzwid
-  minfrac <- para$minfrac
-  minsamp <- para$minsamp
-  max <- para$max
-  distFunc <- para$distFunc
-  plottype <- para$plottype
-  retcorMethod <- para$retcorMethod
-  mzCenterFun <- para$mzCenterFun
-  fitgauss <- para$fitgauss
-  verboseColumns <- para$verbose.columns
   files <- list.files(path,full.names = T,recursive = T)
   if(!is.null(index)){
     files <- files[index]
   }
   xset <- xcmsSet(files,
                   method = "centWave",
-                  peakwidth       = peakwidth,
-                  ppm             = ppm,
-                  noise           = noise,
-                  snthresh        = snthresh,
-                  mzdiff          = mzdiff,
-                  prefilter       = prefilter,
-                  mzCenterFun     = mzCenterFun,
-                  integrate       = integrate,
-                  fitgauss        = fitgauss,
-                  verbose.columns = verboseColumns)
+                  peakwidth       = c(para$min_peakwidth,para$max_peakwidth),
+                  ppm             = para$ppm,
+                  noise           = para$noise,
+                  snthresh        = para$snthresh,
+                  mzdiff          = para$mzdiff,
+                  prefilter       = c(para$prefilter,para$value_of_prefilter),
+                  mzCenterFun     = para$mzCenterFun,
+                  integrate       = para$integrate,
+                  fitgauss        = para$fitgauss,
+                  verbose.columns = para$verbose.columns)
   xset <- retcor( 
     xset,
-    method         = retcorMethod,
-    plottype       = plottype,
-    distFunc       = distFunc,
-    profStep       = profStep,
-    center         = center,
-    response       = response,
-    gapInit        = gapInit,
-    gapExtend      = gapExtend,
-    factorDiag     = factorDiag,
-    factorGap      = factorGap,
-    localAlignment = localAlignment)
+    method         = para$retcorMethod,
+    plottype       = para$plottype,
+    distFunc       = para$distFunc,
+    profStep       = para$profStep,
+    center         = para$center,
+    response       = para$response,
+    gapInit        = para$gapInit,
+    gapExtend      = para$gapExtend,
+    factorDiag     = para$factorDiag,
+    factorGap      = para$factorGap,
+    localAlignment = para$localAlignment)
   xset <- group( 
     xset,
     method  = "density",
-    bw      = bw,
-    mzwid   = mzwid,
-    minfrac = minfrac,
-    minsamp = minsamp,
-    max     = max)
+    bw      = para$bw,
+    mzwid   = para$mzwid,
+    minfrac = para$minfrac,
+    minsamp = para$minsamp,
+    max     = para$max)
   
   xset <- fillPeaks(xset)
   return(xset)
